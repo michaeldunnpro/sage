@@ -132,8 +132,9 @@ def test_sigint_before_ecl_sig_on():
     # since ecl_sig_on() calls sig_on() before anything else.  This
     # will catch the pending SIGINT.
     ecl_sig_on()
-    # We should never get here.
-    abort()
+    # We should never get here.  Raise a regular exception so that a
+    # test failure is reported without aborting the doctest worker.
+    raise RuntimeError("expected KeyboardInterrupt before ecl_sig_on() returned")
 
 
 def test_ecl_options():
