@@ -27,6 +27,9 @@ from sage.rings.integer cimport Integer
 from sage.rings.rational cimport Rational
 from cpython.object cimport Py_EQ, Py_NE
 
+cdef extern from "Python.h":
+    int PyErr_CheckSignals() except -1
+
 # it would be preferable to let bint_symbolp wrap an efficient macro
 # but the macro provided in object.h doesn't seem to work
 cdef bint bint_symbolp(cl_object obj) noexcept:
@@ -129,9 +132,13 @@ def test_sigint_before_ecl_sig_on():
     # Raise a SIGINT *now*.  Since we are outside of sig_on() at this
     # point, this SIGINT will not be seen yet.
     signal_raise(SIGINT)
-    # An ordinary KeyboardInterrupt should be raised by ecl_sig_on()
-    # since ecl_sig_on() calls sig_on() before anything else.  This
-    # will catch the pending SIGINT.
+    # In Python 3.14+, Python's own signal handler may intercept the SIGINT
+    # before cysignals, storing it as a pending Python-level exception.
+    # PyErr_CheckSignals() delivers that pending exception immediately.
+    PyErr_CheckSignals()
+    # On older Python versions (or if cysignals handled SIGINT), an ordinary
+    # KeyboardInterrupt should be raised by ecl_sig_on() since ecl_sig_on()
+    # calls sig_on() before anything else.  This will catch the pending SIGINT.
     ecl_sig_on()
     sig_check()
     # We should never get here.
