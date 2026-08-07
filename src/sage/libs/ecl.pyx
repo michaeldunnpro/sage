@@ -136,9 +136,10 @@ def test_sigint_before_ecl_sig_on():
     # before cysignals, storing it as a pending Python-level exception.
     # PyErr_CheckSignals() delivers that pending exception immediately.
     PyErr_CheckSignals()
-    # On older Python versions (or if cysignals handled SIGINT), an ordinary
-    # KeyboardInterrupt should be raised by ecl_sig_on() since ecl_sig_on()
-    # calls sig_on() before anything else.  This will catch the pending SIGINT.
+    # If PyErr_CheckSignals() did not raise (i.e., Python did not intercept the
+    # SIGINT), then cysignals caught it instead and set cysigs.interrupted.
+    # ecl_sig_on() calls sig_on() before anything else, which will raise a
+    # KeyboardInterrupt for the pending cysignals-level SIGINT.
     ecl_sig_on()
     sig_check()
     # We should never get here.
